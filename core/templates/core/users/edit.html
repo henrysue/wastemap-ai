@@ -1,0 +1,73 @@
+{% extends "core/base.html" %}
+{% block title %}Edit User — WasteMap AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card chart-card">
+      <div class="card-header bg-white border-0 pt-4 px-4">
+        <h2 class="h4 fw-bold mb-0">Edit User: {{ target_user.username }}</h2>
+      </div>
+      <div class="card-body px-4 pb-4">
+        <form method="post" action="/users/{{ target_user.pk }}/edit/">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label for="id_username" class="form-label fw-semibold">Username</label>
+            {{ form.username }}
+            {% if form.username.errors %}<div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="id_first_name" class="form-label fw-semibold">First Name</label>
+              {{ form.first_name }}
+              {% if form.first_name.errors %}<div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="id_last_name" class="form-label fw-semibold">Last Name</label>
+              {{ form.last_name }}
+              {% if form.last_name.errors %}<div class="text-danger small mt-1">{{ form.last_name.errors.0 }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="id_email" class="form-label fw-semibold">Email</label>
+            {{ form.email }}
+            {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label for="id_role" class="form-label fw-semibold">Role</label>
+            {{ form.role }}
+            {% if form.role.errors %}<div class="text-danger small mt-1">{{ form.role.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="id_section" class="form-label fw-semibold">Section</label>
+              {{ form.section }}
+            </div>
+            <div class="col-md-6">
+              <label for="id_subsection" class="form-label fw-semibold">Subsection</label>
+              {{ form.subsection }}
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <div class="form-check">
+              {{ form.is_active }}
+              <label class="form-check-label fw-semibold" for="id_is_active">Active</label>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4">Save Changes</button>
+            <a href="/users/" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
