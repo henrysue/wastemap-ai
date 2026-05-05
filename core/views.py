@@ -1,12 +1,12 @@
 import json
 import logging
 from functools import wraps
+from urllib.parse import urlparse
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.db.models import Count
 from django.views.decorators.http import require_POST
 
@@ -57,14 +57,15 @@ def login_view(request):
         if user is not None:
             login(request, user)
             next_url = request.GET.get('next', '')
-            # Restrict to relative paths only to prevent open redirect
-            if (next_url and next_url.startswith('/')
-                    and url_has_allowed_host_and_scheme(
-                        url=next_url,
-                        allowed_hosts={request.get_host()},
-                        require_https=request.is_secure(),
-                    )):
-                return redirect(next_url)
+            # Extract only the path+query from the next parameter to prevent
+            # open redirect attacks — never trust the scheme or netloc.
+            if next_url:
+                parsed = urlparse(next_url)
+                safe_path = parsed.path
+                if parsed.query:
+                    safe_path += '?' + parsed.query
+                if safe_path and safe_path.startswith('/'):
+                    return redirect(safe_path)
             return redirect('dashboard')
         error = 'Invalid username or password.'
 
