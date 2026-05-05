@@ -1,0 +1,131 @@
+[
+  {
+    "model": "core.section",
+    "pk": 1,
+    "fields": {
+      "name": "West Los Angeles",
+      "slug": "west-los-angeles",
+      "latitude": 34.0195,
+      "longitude": -118.4912
+    }
+  },
+  {
+    "model": "core.subsection",
+    "pk": 1,
+    "fields": {
+      "section": 1,
+      "name": "Brentwood",
+      "slug": "brentwood",
+      "latitude": 34.0495,
+      "longitude": -118.4754
+    }
+  },
+  {
+    "model": "core.subsection",
+    "pk": 2,
+    "fields": {
+      "section": 1,
+      "name": "Pacific Palisades",
+      "slug": "pacific-palisades",
+      "latitude": 34.0833,
+      "longitude": -118.5263
+    }
+  },
+  {
+    "model": "core.subsection",
+    "pk": 3,
+    "fields": {
+      "section": 1,
+      "name": "Mar Vista",
+      "slug": "mar-vista",
+      "latitude": 34.0002,
+      "longitude": -118.4298
+    }
+  },
+  {
+    "model": "core.subsection",
+    "pk": 4,
+    "fields": {
+      "section": 1,
+      "name": "Palms",
+      "slug": "palms",
+      "latitude": 34.0146,
+      "longitude": -118.4173
+    }
+  },
+  {
+    "model": "core.subsection",
+    "pk": 5,
+    "fields": {
+      "section": 1,
+      "name": "Westwood",
+      "slug": "westwood",
+      "latitude": 34.0631,
+      "longitude": -118.4441
+    }
+  },
+  {
+    "model": "core.subsection",
+    "pk": 6,
+    "fields": {
+      "section": 1,
+      "name": "Sawtelle",
+      "slug": "sawtelle",
+      "latitude": 34.0274,
+      "longitude": -118.4649
+    }
+  },
+  {
+    "model": "core.subsection",
+    "pk": 7,
+    "fields": {
+      "section": 1,
+      "name": "Marina del Rey",
+      "slug": "marina-del-rey",
+      "latitude": 33.9802,
+      "longitude": -118.4517
+    }
+  },
+  {
+    "model": "core.subsection",
+    "pk": 8,
+    "fields": {
+      "section": 1,
+      "name": "Del Rey",
+      "slug": "del-rey",
+      "latitude": 33.9904,
+      "longitude": -118.4166
+    }
+  },
+  {
+    "model": "core.subsection",
+    "pk": 9,
+    "fields": {
+      "section": 1,
+      "name": "Culver City Adjacent",
+      "slug": "culver-city-adjacent",
+      "latitude": 34.0211,
+      "longitude": -118.3965
+    }
+  },
+  {
+    "model": "core.customuser",
+    "pk": 1,
+    "fields": {
+      "username": "admin",
+      "first_name": "Admin",
+      "last_name": "User",
+      "email": "admin@wastemap.ai",
+      "password": "!notset",
+      "role": "admin",
+      "is_staff": true,
+      "is_superuser": true,
+      "is_active": true,
+      "date_joined": "2024-01-01T00:00:00Z",
+      "section": null,
+      "subsection": null,
+      "groups": [],
+      "user_permissions": []
+    }
+  }
+]
