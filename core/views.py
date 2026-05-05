@@ -1,7 +1,6 @@
 import json
 import logging
 from functools import wraps
-from urllib.parse import urlparse
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -56,16 +55,6 @@ def login_view(request):
         )
         if user is not None:
             login(request, user)
-            next_url = request.GET.get('next', '')
-            # Extract only the path+query from the next parameter to prevent
-            # open redirect attacks — never trust the scheme or netloc.
-            if next_url:
-                parsed = urlparse(next_url)
-                safe_path = parsed.path
-                if parsed.query:
-                    safe_path += '?' + parsed.query
-                if safe_path and safe_path.startswith('/'):
-                    return redirect(safe_path)
             return redirect('dashboard')
         error = 'Invalid username or password.'
 
