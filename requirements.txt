@@ -3,8 +3,9 @@ channels>=4.0
 channels-redis>=4.0
 daphne>=4.0
 Pillow>=10.0
-# opencv-python-headless and numpy are for real CV inference.
-# The current mock classifier in consumers.py can be replaced with a real model.
 opencv-python-headless>=4.8
 numpy>=1.24
 redis>=5.0
+# YOLOv8 inference + HuggingFace Hub download
+ultralytics>=8.3
+huggingface_hub>=0.20
