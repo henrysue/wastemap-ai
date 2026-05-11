@@ -1,13 +1,22 @@
+import base64
 import json
 import logging
+from datetime import timedelta
 from functools import wraps
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.core.files.base import ContentFile
+from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.db.models import Count
+from django.db.models.functions import TruncDate
+from django.utils import timezone
 from django.views.decorators.http import require_POST
+
+
+REVIEW_CONFIDENCE_THRESHOLD = 0.70
 
 from .forms import LoginForm, UserCreateForm, UserEditForm
 from .models import CustomUser, Section, Subsection, WasteItem
@@ -70,20 +79,25 @@ def logout_view(request):
 # Main pages
 # ---------------------------------------------------------------------------
 
+DIVERTED_TYPES = ('organic', 'recyclable')
+
+
 @login_required
 def dashboard(request):
     total_items = WasteItem.objects.count()
-    from django.utils import timezone
     today = timezone.now().date()
     today_items = WasteItem.objects.filter(timestamp__date=today).count()
     active_users = CustomUser.objects.filter(is_active=True).count()
     active_sections = Section.objects.count()
+    diverted_items = WasteItem.objects.filter(waste_type__in=DIVERTED_TYPES).count()
+    diversion_rate = (diverted_items / total_items * 100) if total_items else 0
     recent = WasteItem.objects.select_related('section', 'subsection')[:10]
     context = {
         'total_items': total_items,
         'today_items': today_items,
         'active_users': active_users,
         'active_sections': active_sections,
+        'diversion_rate': diversion_rate,
         'recent_items': recent,
     }
     return render(request, 'core/dashboard.html', context)
@@ -94,6 +108,67 @@ def dashboard(request):
 def geomap(request):
     sections = Section.objects.prefetch_related('subsections').all()
     return render(request, 'core/geomap.html', {'sections': sections})
+
+
+@login_required
+@staff_required
+def review_queue(request):
+    page = request.GET.get('page', 1)
+    qs = (
+        WasteItem.objects
+        .filter(review_status='pending')
+        .select_related('section', 'subsection', 'captured_by')
+        .order_by('confidence', '-timestamp')
+    )
+    pending_count = qs.count()
+    paginator = Paginator(qs, 12)
+    page_obj = paginator.get_page(page)
+    waste_choices = WasteItem._meta.get_field('waste_type').choices
+    prop_choices = WasteItem._meta.get_field('properties').choices
+    return render(request, 'core/review.html', {
+        'page_obj': page_obj,
+        'pending_count': pending_count,
+        'waste_choices': waste_choices,
+        'property_choices': prop_choices,
+        'threshold': REVIEW_CONFIDENCE_THRESHOLD,
+    })
+
+
+@login_required
+@staff_required
+@require_POST
+def api_review_action(request, pk):
+    try:
+        payload = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    item = get_object_or_404(WasteItem, pk=pk)
+    action = payload.get('action')
+
+    if action == 'delete':
+        if item.image_snapshot:
+            item.image_snapshot.delete(save=False)
+        item.delete()
+        return JsonResponse({'ok': True, 'action': 'deleted'})
+
+    if action in ('confirm', 'correct'):
+        if action == 'correct':
+            new_type = payload.get('waste_type')
+            new_props = payload.get('properties')
+            valid_types = [c[0] for c in WasteItem._meta.get_field('waste_type').choices]
+            valid_props = [c[0] for c in WasteItem._meta.get_field('properties').choices]
+            if new_type not in valid_types or new_props not in valid_props:
+                return JsonResponse({'error': 'Invalid waste_type or properties'}, status=400)
+            item.waste_type = new_type
+            item.properties = new_props
+        item.review_status = 'reviewed'
+        item.reviewed_by = request.user
+        item.reviewed_at = timezone.now()
+        item.save(update_fields=['waste_type', 'properties', 'review_status', 'reviewed_by', 'reviewed_at'])
+        return JsonResponse({'ok': True, 'action': action})
+
+    return JsonResponse({'error': 'Unknown action'}, status=400)
 
 
 @login_required
@@ -161,6 +236,40 @@ def api_waste_stats(request):
     all_types = [c[0] for c in WasteItem._meta.get_field('waste_type').choices]
     result = {t: data.get(t, 0) for t in all_types}
     return JsonResponse(result)
+
+
+@login_required
+def api_waste_timeseries(request):
+    try:
+        days = int(request.GET.get('days', 30))
+    except (TypeError, ValueError):
+        days = 30
+    days = max(1, min(days, 365))
+
+    cutoff_date = (timezone.now() - timedelta(days=days - 1)).date()
+    qs = (
+        WasteItem.objects
+        .filter(timestamp__date__gte=cutoff_date)
+        .annotate(day=TruncDate('timestamp'))
+        .values('day', 'waste_type')
+        .annotate(count=Count('id'))
+    )
+
+    all_types = [c[0] for c in WasteItem._meta.get_field('waste_type').choices]
+    today = timezone.now().date()
+    dates = [today - timedelta(days=i) for i in range(days - 1, -1, -1)]
+    date_index = {d: i for i, d in enumerate(dates)}
+    series = {t: [0] * len(dates) for t in all_types}
+
+    for row in qs:
+        idx = date_index.get(row['day'])
+        if idx is not None and row['waste_type'] in series:
+            series[row['waste_type']][idx] = row['count']
+
+    return JsonResponse({
+        'dates': [d.strftime('%Y-%m-%d') for d in dates],
+        'series': series,
+    })
 
 
 @login_required
@@ -234,7 +343,9 @@ def api_add_waste_item(request):
     if subsection_id:
         subsection = Subsection.objects.filter(pk=subsection_id).first()
 
-    item = WasteItem.objects.create(
+    review_status = 'pending' if confidence < REVIEW_CONFIDENCE_THRESHOLD else 'auto'
+
+    item = WasteItem(
         waste_type=waste_type,
         properties=properties,
         confidence=confidence,
@@ -242,7 +353,20 @@ def api_add_waste_item(request):
         subsection=subsection,
         captured_by=request.user if request.user.is_authenticated else None,
         notes=payload.get('notes', ''),
+        review_status=review_status,
     )
+
+    image_b64 = payload.get('image')
+    if image_b64:
+        try:
+            img_bytes = base64.b64decode(image_b64)
+            filename = f"snap_{timezone.now().strftime('%Y%m%d_%H%M%S_%f')}.jpg"
+            item.image_snapshot.save(filename, ContentFile(img_bytes), save=False)
+        except (ValueError, TypeError, base64.binascii.Error):
+            logger.warning('Failed to decode image snapshot; saving item without image')
+
+    item.save()
+
     return JsonResponse({
         'id': item.pk,
         'waste_type': item.waste_type,
@@ -253,4 +377,5 @@ def api_add_waste_item(request):
         'section': item.section.name if item.section else '',
         'subsection': item.subsection.name if item.subsection else '',
         'timestamp': item.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+        'review_status': item.review_status,
     })

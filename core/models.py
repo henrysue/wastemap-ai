@@ -57,6 +57,12 @@ PROPERTY_CHOICES = [
     ('inert', 'Inert'),
 ]
 
+REVIEW_STATUS_CHOICES = [
+    ('auto', 'Auto'),
+    ('pending', 'Pending Review'),
+    ('reviewed', 'Reviewed'),
+]
+
 
 class WasteItem(models.Model):
     waste_type = models.CharField(max_length=30, choices=WASTE_TYPE_CHOICES)
@@ -68,6 +74,12 @@ class WasteItem(models.Model):
     captured_by = models.ForeignKey(CustomUser, null=True, blank=True, on_delete=models.SET_NULL)
     timestamp = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True)
+    review_status = models.CharField(max_length=20, choices=REVIEW_STATUS_CHOICES, default='auto')
+    reviewed_by = models.ForeignKey(
+        CustomUser, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='reviewed_items',
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['-timestamp']

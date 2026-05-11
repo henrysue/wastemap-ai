@@ -10,16 +10,18 @@ function getCookie(name) {
   return v ? v[2] : null;
 }
 
+// Pale companion to the dashboard's government data-viz palette.
 const WASTE_COLORS = {
-  msw: '#6366f1', hazardous: '#ef4444', organic: '#22c55e',
-  recyclable: '#3b82f6', liquid: '#06b6d4', ewaste: '#f59e0b',
-  cd: '#8b5cf6', medical: '#ec4899', gaseous: '#64748b',
+  msw: '#e8eaec', hazardous: '#f0dcdc', organic: '#dde9e1',
+  recyclable: '#d8e1ec', liquid: '#d8e7ea', ewaste: '#ede4cc',
+  cd: '#e8ddd1', medical: '#e8d7e1', gaseous: '#d9dee3',
 };
 
 let ws = null;
 let captureInterval = null;
 let isRunning = false;
 let feedItemCount = 0;
+let latestFrameB64 = null;
 
 const videoEl = document.getElementById('videoEl');
 const overlayCanvas = document.getElementById('overlayCanvas');
@@ -57,7 +59,7 @@ function addFeedItem(result) {
   const color = WASTE_COLORS[result.waste_type] || '#888';
   li.innerHTML = `
     <div class="d-flex justify-content-between align-items-center">
-      <span class="badge rounded-pill" style="background:${color}">${escapeHTML(result.waste_type_label || result.waste_type)}</span>
+      <span class="badge rounded-pill" style="background:${color};color:#1f2937;border:1px solid rgba(0,0,0,0.08);font-weight:500;">${escapeHTML(result.waste_type_label || result.waste_type)}</span>
       <small class="text-muted">${(result.confidence * 100).toFixed(0)}%</small>
     </div>
     <div class="small mt-1 text-muted">${escapeHTML(result.properties_label || result.properties)}</div>
@@ -97,6 +99,7 @@ async function persistItem(result) {
         confidence: result.confidence,
         section_id: sectionId || null,
         subsection_id: subsectionId || null,
+        image: latestFrameB64,
       }),
     });
     if (!res.ok) console.warn('Failed to persist item:', res.status);
@@ -112,6 +115,7 @@ function captureFrame() {
   canvas.height = videoEl.videoHeight || 480;
   canvas.getContext('2d').drawImage(videoEl, 0, 0, canvas.width, canvas.height);
   const b64 = canvas.toDataURL('image/jpeg', 0.5).split(',')[1];
+  latestFrameB64 = b64;
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ type: 'classify_frame', image: b64 }));
   }

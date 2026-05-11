@@ -9,24 +9,38 @@ body {
 .navbar-brand { font-weight: 700; font-size: 1.3rem; }
 
 /* Stat cards */
-.stat-card { border: none; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: transform 0.15s; }
-.stat-card:hover { transform: translateY(-3px); }
-.stat-card .card-body { padding: 1.5rem; }
-.stat-icon { font-size: 2.4rem; opacity: 0.8; }
+.stat-card { border: 1px solid rgba(0,0,0,0.06); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: transform 0.15s; color: #1f2937; }
+.stat-card:hover { transform: translateY(-2px); }
+.stat-card .card-body { padding: 0.9rem 1.1rem; }
+.stat-value { font-size: 1.5rem; line-height: 1.2; }
+.stat-icon { font-size: 1.6rem; opacity: 0.55; }
 
 /* Chart card */
 .chart-card { border: none; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
 
-/* Waste type color badges */
-.badge-msw { background: #6366f1; }
-.badge-hazardous { background: #ef4444; }
-.badge-organic { background: #22c55e; }
-.badge-recyclable { background: #3b82f6; }
-.badge-liquid { background: #06b6d4; }
-.badge-ewaste { background: #f59e0b; }
-.badge-cd { background: #8b5cf6; }
-.badge-medical { background: #ec4899; }
-.badge-gaseous { background: #64748b; }
+/* Waste type color badges — pastel fill with dark slate text for legibility */
+.badge-msw,
+.badge-hazardous,
+.badge-organic,
+.badge-recyclable,
+.badge-liquid,
+.badge-ewaste,
+.badge-cd,
+.badge-medical,
+.badge-gaseous {
+  color: #1f2937;
+  font-weight: 500;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.badge-msw        { background: #e8eaec; }
+.badge-hazardous  { background: #f0dcdc; }
+.badge-organic    { background: #dde9e1; }
+.badge-recyclable { background: #d8e1ec; }
+.badge-liquid     { background: #d8e7ea; }
+.badge-ewaste     { background: #ede4cc; }
+.badge-cd         { background: #e8ddd1; }
+.badge-medical    { background: #e8d7e1; }
+.badge-gaseous    { background: #d9dee3; }
 
 /* Role badges */
 .badge-admin { background: #dc2626; }
@@ -58,3 +72,5 @@ body {
 
 /* Map */
 #map { z-index: 1; }
+.sub-link { color: #4a6275; cursor: pointer; transition: color 0.15s; }
+.sub-link:hover { color: #205493; text-decoration: underline !important; }
